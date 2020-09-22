@@ -1,0 +1,11 @@
+{
+  "name": "react-base-app",
+  "version": "1.0.0",
+  "description": "Empty react app",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "hurgusburgus",
+  "license": "ISC"
+}
