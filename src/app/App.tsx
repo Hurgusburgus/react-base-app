@@ -1,12 +1,20 @@
 import * as React from 'react';
+import {
+  ApolloClient,
+  InMemoryCache,
+  ApolloProvider,
+  gql,
+} from '@apollo/client';
 
-export interface HelloWorldProps {
-  userName: string;
-  lang: string;
-}
-export const App = ({
-  userName,
-  lang,
-}: HelloWorldProps): React.ReactElement => (
-  <h1>{`Hi ${userName} from React! Welcome to ${lang}`}</h1>
+const client = new ApolloClient({
+  uri: 'https://48p1r2roz4.sse.codesandbox.io',
+  cache: new InMemoryCache(),
+});
+
+const App = (): React.ReactElement => (
+  <ApolloProvider client={client}>
+    <h1> Hi from React! Welcome </h1>
+  </ApolloProvider>
 );
+
+export default App;
