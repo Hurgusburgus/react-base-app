@@ -5,15 +5,36 @@ import {
   ApolloProvider,
   gql,
 } from '@apollo/client';
+import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
+import styled from 'styled-components';
+import PrivateRoute from './shared/private-route';
+import { UserContextProvider } from './shared/user.context';
+import Header from './header/main-page-header';
+import HomePage from './home-page/home.page';
 
 const client = new ApolloClient({
-  uri: 'https://48p1r2roz4.sse.codesandbox.io',
+  uri: 'http://localhost:3000/graphql',
   cache: new InMemoryCache(),
 });
 
+const AppWrapper = styled.div`
+  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+`;
+
 const App = (): React.ReactElement => (
   <ApolloProvider client={client}>
-    <h1> Hi from React! Welcome </h1>
+    <UserContextProvider>
+      <AppWrapper>
+        <Header />
+        <Router>
+          <Switch>
+            <Route path="/">
+              <HomePage />
+            </Route>
+          </Switch>
+        </Router>
+      </AppWrapper>
+    </UserContextProvider>
   </ApolloProvider>
 );
 

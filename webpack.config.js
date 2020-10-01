@@ -1,42 +1,47 @@
-const path = require("path");
+const path = require('path');
 const webpack = require('webpack');
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
-  entry: "./src/app/index.tsx",
-  target: "web",
-  mode: "development",
+  entry: './src/app/index.tsx',
+  target: 'web',
+  mode: 'development',
   output: {
-    path: path.resolve(__dirname, "build"),
-    filename: "bundle.js",
+    path: path.resolve(__dirname, 'build'),
+    filename: 'bundle.js',
+    publicPath: '/',
   },
   resolve: {
-    extensions: [".js", ".jsx", ".json", ".ts", ".tsx"],
+    extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
   },
   module: {
     rules: [
       {
         test: /\.(ts|jts)x?$/,
-        loader: "babel-loader",
+        loader: 'babel-loader',
       },
       {
-        enforce: "pre",
+        enforce: 'pre',
         test: /\.js$/,
-        loader: "source-map-loader",
+        loader: 'source-map-loader',
       },
       {
         test: /\.css$/,
-        loader: "css-loader",
+        loader: 'css-loader',
       },
     ],
   },
+  devtool: 'source-map',
+  devServer: {
+    historyApiFallback: true,
+  },
   plugins: [
     new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, "src", "app", "index.html"),
+      template: path.resolve(__dirname, 'src', 'app', 'index.html'),
     }),
     new MiniCssExtractPlugin({
-      filename: "./src/yourfile.css",
+      filename: './src/yourfile.css',
     }),
   ],
 };
