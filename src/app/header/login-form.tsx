@@ -1,7 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { UserContext } from '../shared/user.context';
-import { HeaderElement } from './main-page-header';
 
 const padding = `margin-right: 0.5rem;`;
 

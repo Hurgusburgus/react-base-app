@@ -1,54 +1,79 @@
 import * as React from 'react';
-import styled from 'styled-components';
+import {
+  withStyles,
+  makeStyles,
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+} from '@material-ui/core';
+import { useHistory } from 'react-router-dom';
 import { UserContext } from '../shared/user.context';
-import LoginForm from './login-form';
+import ProfileMenu from './profile-menu';
 
-const Header = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: baseline;
-  background-color: #ccc;
-  padding: 1rem;
-`;
+const useStyles = makeStyles((theme) => ({
+  typographyStyles: {
+    flex: 1,
+    color: 'white',
+  },
+  buttonContainer: {
+    flex: 1,
+  },
+  headerButton: {
+    margin: theme.spacing(1),
+  },
+}));
 
-const Title = styled.div`
-  font-size: 1.5rem;
-`;
+const MainAppBar = withStyles({
+  root: {
+    background: 'linear-gradient(45deg, #53afd4 30%, #1d4c5e 90%)',
+  },
+})(AppBar);
 
-const Username = styled.strong`
-  color: blue;
-`;
-
-export const HeaderElement = styled.div`
-  margin: 0.5rem 2rem;
-`;
+const LoginButton = withStyles({
+  root: {
+    color: 'white',
+  },
+})(Button);
 
 const MainSiteHeader = (): React.ReactElement => {
+  const classes = useStyles();
   const [userState, actions] = React.useContext(UserContext);
-  const { user, loggedIn } = userState;
-  const { logout } = actions;
+  const { loggedIn } = userState;
+  const history = useHistory();
 
   return (
-    <Header>
-      <Title>Gabe Test Site</Title>
-      <div>
-        {loggedIn ? (
-          <>
-            <span>
-              {'Logged in as '}
-              <Username>{user.username}</Username>
-            </span>
-            <button type="button" onClick={logout}>
-              <span>Logout</span>
-            </button>
-          </>
-        ) : (
-          <LoginForm />
-        )}
-      </div>
-    </Header>
+    <MainAppBar position="sticky">
+      <Toolbar>
+        <Typography className={classes.typographyStyles}>
+          Gabe Test App
+        </Typography>
+        <div>
+          {loggedIn ? (
+            <ProfileMenu />
+          ) : (
+            <div className={classes.buttonContainer}>
+              <LoginButton
+                className={classes.headerButton}
+                variant="contained"
+                color="primary"
+                href="/login"
+              >
+                Login
+              </LoginButton>
+              <LoginButton
+                className={classes.headerButton}
+                variant="contained"
+                color="secondary"
+                href="/signup"
+              >
+                Sign Up
+              </LoginButton>
+            </div>
+          )}
+        </div>
+      </Toolbar>
+    </MainAppBar>
   );
 };
 

@@ -14,4 +14,22 @@ const logout = (): Promise<any> => {
   });
 };
 
-export default { login, logout };
+const usernameExists = (username: string): Promise<any> => {
+  const result = username === 'username';
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve({ result });
+    }, 250);
+  });
+};
+
+const emailExists = (email: string): Promise<any> => {
+  const result = email === 'email';
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve({ result });
+    }, 250);
+  });
+};
+
+export default { login, logout, usernameExists, emailExists };
