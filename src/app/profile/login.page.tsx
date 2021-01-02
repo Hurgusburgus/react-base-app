@@ -13,8 +13,55 @@ import {
   Link,
 } from '@material-ui/core';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
+import ErrorOutlineIcon from '@material-ui/icons/ErrorOutline';
+import { gql, useQuery, useMutation } from '@apollo/client';
 
-import { UserContext } from '../shared/user.context';
+import { currentUserVar } from '../cache';
+import { User } from '../models/models';
+
+const CURRENT_USER = gql`
+  query getCurrentUser {
+    currentUser @client
+  }
+`;
+
+export const LOGIN = gql`
+  mutation login($username: String!, $password: String!) {
+    login(username: $username, password: $password) {
+      user {
+        id
+        username
+        email
+      }
+    }
+  }
+`;
+
+const LoginPageWithData = (): React.ReactElement => {
+  const history = useHistory();
+
+  const {
+    data: { currentUser },
+  } = useQuery(CURRENT_USER);
+
+  const [login, { loading, error }] = useMutation(LOGIN, {
+    onCompleted({ login: loginResponse }) {
+      if (loginResponse && loginResponse.user) {
+        localStorage.setItem('currentUser', JSON.stringify(loginResponse.user));
+        currentUserVar(loginResponse.user);
+        history.push('/');
+      }
+    },
+  });
+  return (
+    <LoginPage
+      currentUser={currentUser}
+      login={login}
+      loading={loading}
+      error={error}
+    />
+  );
+};
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -34,26 +81,42 @@ const useStyles = makeStyles((theme) => ({
   submit: {
     margin: theme.spacing(3, 0, 2),
   },
+  alert: {
+    padding: theme.spacing(1),
+    backgroundColor: '#fdecea',
+    borderRadius: '5px',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  alertText: {
+    marginLeft: theme.spacing(1),
+  },
 }));
 
-const LoginPage = (): React.ReactElement => {
-  const history = useHistory();
+interface LoginPageProps {
+  currentUser: User;
+  login: (options?: any) => void;
+  loading: boolean;
+  error: any;
+}
+
+const LoginPage = ({
+  currentUser,
+  login,
+  loading,
+  error,
+}: LoginPageProps): React.ReactElement => {
   const classes = useStyles();
+  const history = useHistory();
   const [inputs, setInputs] = React.useState({
     username: '',
     password: '',
   });
   const { username, password } = inputs;
   const [submitted, setSubmitted] = React.useState(false);
-  const [userState, userActions] = React.useContext(UserContext);
-  const { loggedIn, loggingIn } = userState;
 
-  if (loggedIn) {
+  if (currentUser) {
     history.push('/');
-  }
-
-  if (loggingIn) {
-    return <div>Logging In...</div>;
   }
 
   const handleChange = (e: any): void => {
@@ -65,7 +128,7 @@ const LoginPage = (): React.ReactElement => {
     e.preventDefault();
     setSubmitted(true);
     if (username && password) {
-      userActions.login(username, password);
+      login({ variables: { username, password } });
     }
   };
 
@@ -79,6 +142,12 @@ const LoginPage = (): React.ReactElement => {
           Sign In
         </Typography>
         <form className={classes.form} noValidate>
+          {error ? (
+            <div className={classes.alert}>
+              <ErrorOutlineIcon style={{ color: 'red' }} />
+              <span className={classes.alertText}>{error.message}</span>
+            </div>
+          ) : null}
           <TextField
             variant="outlined"
             margin="normal"
@@ -137,4 +206,4 @@ const LoginPage = (): React.ReactElement => {
   );
 };
 
-export default LoginPage;
+export default LoginPageWithData;

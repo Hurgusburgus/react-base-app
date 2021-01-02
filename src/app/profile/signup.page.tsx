@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { gql, useQuery, useMutation } from '@apollo/client';
 import { useHistory, Link as RouterLink } from 'react-router-dom';
 import {
   makeStyles,
@@ -11,8 +12,55 @@ import {
   Link,
 } from '@material-ui/core';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
-import { removeArgumentsFromDocument } from '@apollo/client/utilities';
-import { UserContext } from '../shared/user.context';
+import ErrorOutlineIcon from '@material-ui/icons/ErrorOutline';
+import { currentUserVar } from '../cache';
+import { User } from '../models/models';
+
+const CURRENT_USER = gql`
+  query getCurrentUser {
+    currentUser @client
+  }
+`;
+export const SIGNUP = gql`
+  mutation signup($email: String!, $username: String!, $password: String!) {
+    signup(email: $email, username: $username, password: $password) {
+      user {
+        id
+        username
+        email
+      }
+    }
+  }
+`;
+
+const SignUpPageWithData = (): React.ReactElement => {
+  const history = useHistory();
+
+  const {
+    data: { currentUser },
+  } = useQuery(CURRENT_USER);
+
+  const [signup, { loading, error }] = useMutation(SIGNUP, {
+    onCompleted({ signup: signupResponse }) {
+      if (signupResponse && signupResponse.user) {
+        localStorage.setItem(
+          'currentUser',
+          JSON.stringify(signupResponse.user)
+        );
+        currentUserVar(signupResponse.user);
+        history.push('/');
+      }
+    },
+  });
+  return (
+    <SignUpPage
+      currentUser={currentUser}
+      signup={signup}
+      loading={loading}
+      error={error}
+    />
+  );
+};
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -32,9 +80,31 @@ const useStyles = makeStyles((theme) => ({
   submit: {
     margin: theme.spacing(3, 0, 2),
   },
+  alert: {
+    padding: theme.spacing(1),
+    backgroundColor: '#fdecea',
+    borderRadius: '5px',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  alertText: {
+    marginLeft: theme.spacing(1),
+  },
 }));
 
-const SignUpPage = (): React.ReactElement => {
+interface SignUpPageProps {
+  currentUser: User;
+  signup: (options?: any) => void;
+  loading: boolean;
+  error: any;
+}
+
+const SignUpPage = ({
+  currentUser,
+  signup,
+  loading,
+  error,
+}: SignUpPageProps): React.ReactElement => {
   const history = useHistory();
   const classes = useStyles();
   const [inputs, setInputs] = React.useState({
@@ -59,10 +129,8 @@ const SignUpPage = (): React.ReactElement => {
     valid,
   } = validations;
   const [submitted, setSubmitted] = React.useState(false);
-  const [userState, userActions] = React.useContext(UserContext);
-  const { loggedIn } = userState;
 
-  if (loggedIn) {
+  if (currentUser) {
     history.push('/');
   }
 
@@ -118,8 +186,8 @@ const SignUpPage = (): React.ReactElement => {
   const handleSubmit = (e: any): void => {
     e.preventDefault();
     setSubmitted(true);
-    if (username && password) {
-      userActions.login(username, password);
+    if (email && username && password) {
+      signup({ variables: { email, username, password } });
     }
   };
 
@@ -133,6 +201,12 @@ const SignUpPage = (): React.ReactElement => {
           Create Your Account
         </Typography>
         <form className={classes.form} noValidate>
+          {error ? (
+            <div className={classes.alert}>
+              <ErrorOutlineIcon style={{ color: 'red' }} />
+              <span className={classes.alertText}>{error.message}</span>
+            </div>
+          ) : null}
           <TextField
             variant="outlined"
             margin="normal"
@@ -217,4 +291,4 @@ const SignUpPage = (): React.ReactElement => {
   );
 };
 
-export default SignUpPage;
+export default SignUpPageWithData;

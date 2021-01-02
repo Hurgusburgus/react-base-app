@@ -7,9 +7,22 @@ import {
   Typography,
   Button,
 } from '@material-ui/core';
-import { useHistory } from 'react-router-dom';
-import { UserContext } from '../shared/user.context';
+import { gql, useQuery } from '@apollo/client';
 import ProfileMenu from './profile-menu';
+import { User } from '../models/models';
+
+const CURRENT_USER = gql`
+  query getCurrentUser {
+    currentUser @client
+  }
+`;
+
+const MainSiteHeaderWithData = (): React.ReactElement => {
+  const {
+    data: { currentUser },
+  } = useQuery(CURRENT_USER);
+  return <MainSiteHeader currentUser={currentUser} />;
+};
 
 const useStyles = makeStyles((theme) => ({
   typographyStyles: {
@@ -36,11 +49,14 @@ const LoginButton = withStyles({
   },
 })(Button);
 
-const MainSiteHeader = (): React.ReactElement => {
+interface MainSiteHeaderProps {
+  currentUser: User;
+}
+
+const MainSiteHeader = ({
+  currentUser,
+}: MainSiteHeaderProps): React.ReactElement => {
   const classes = useStyles();
-  const [userState, actions] = React.useContext(UserContext);
-  const { loggedIn } = userState;
-  const history = useHistory();
 
   return (
     <MainAppBar position="sticky">
@@ -49,7 +65,7 @@ const MainSiteHeader = (): React.ReactElement => {
           Gabe Test App
         </Typography>
         <div>
-          {loggedIn ? (
+          {currentUser ? (
             <ProfileMenu />
           ) : (
             <div className={classes.buttonContainer}>
@@ -77,4 +93,4 @@ const MainSiteHeader = (): React.ReactElement => {
   );
 };
 
-export default MainSiteHeader;
+export default MainSiteHeaderWithData;

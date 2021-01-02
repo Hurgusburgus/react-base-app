@@ -1,6 +1,7 @@
 /* eslint-disable react/jsx-props-no-spreading */
 
 import * as React from 'react';
+import { gql, useMutation, useQuery } from '@apollo/client';
 import {
   makeStyles,
   withStyles,
@@ -12,11 +13,49 @@ import {
   ListItemText,
 } from '@material-ui/core';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
-
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import SettingsIcon from '@material-ui/icons/Settings';
-import { UserContext } from '../shared/user.context';
-import LoginForm from './login-form';
+import { User } from '../models/models';
+import { currentUserVar } from '../cache';
+
+const CURRENT_USER = gql`
+  query getCurrentUser {
+    currentUser @client
+  }
+`;
+
+const LOGOUT = gql`
+  mutation logout {
+    logout
+  }
+`;
+
+interface ProfileMenuProps {
+  user: User;
+  loading: boolean;
+  error: any;
+  logout: () => void;
+}
+
+const ProfileMenuWithData = (): React.ReactElement => {
+  const {
+    data: { currentUser },
+  } = useQuery(CURRENT_USER);
+  const [logout, { loading, error }] = useMutation(LOGOUT, {
+    onCompleted({ logout: logoutResponse }) {
+      localStorage.removeItem('currentUser');
+      currentUserVar(null);
+    },
+  });
+  return (
+    <ProfileMenu
+      user={currentUser}
+      logout={logout}
+      loading={loading}
+      error={error}
+    />
+  );
+};
 
 const useStyles = makeStyles((theme) => ({
   typographyStyles: {
@@ -58,11 +97,13 @@ const StyledMenu = withStyles({
   />
 ));
 
-const ProfileMenu = (): React.ReactElement => {
+const ProfileMenu = ({
+  user,
+  loading,
+  error,
+  logout,
+}: ProfileMenuProps): React.ReactElement => {
   const classes = useStyles();
-  const [userState, actions] = React.useContext(UserContext);
-  const { user } = userState;
-  const { logout } = actions;
   const [anchorEl, setAnchorEl] = React.useState(null);
 
   const handleClick = (event: any) => {
@@ -81,7 +122,7 @@ const ProfileMenu = (): React.ReactElement => {
     <>
       <div className={classes.userDisplay}>
         <Typography className={classes.typographyStyles}>
-          {user.username}
+          {user ? user.username : ''}
         </Typography>
         <Avatar className={classes.avatar} onClick={handleClick}>
           <AccountCircleIcon />
@@ -116,4 +157,4 @@ const ProfileMenu = (): React.ReactElement => {
   );
 };
 
-export default ProfileMenu;
+export default ProfileMenuWithData;
