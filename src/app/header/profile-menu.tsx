@@ -16,45 +16,32 @@ import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import SettingsIcon from '@material-ui/icons/Settings';
 import { User } from '../models/models';
-import { currentUserVar } from '../cache';
+import { loggedInUserVar } from '../cache';
 
 const CURRENT_USER = gql`
-  query getCurrentUser {
-    currentUser @client
-  }
-`;
-
-const LOGOUT = gql`
-  mutation logout {
-    logout
+  query getLoggedInUser {
+    loggedInUser @client
   }
 `;
 
 interface ProfileMenuProps {
-  user: User;
-  loading: boolean;
-  error: any;
+  username: string;
   logout: () => void;
 }
 
 const ProfileMenuWithData = (): React.ReactElement => {
   const {
-    data: { currentUser },
+    data: { loggedInUser },
   } = useQuery(CURRENT_USER);
-  const [logout, { loading, error }] = useMutation(LOGOUT, {
-    onCompleted({ logout: logoutResponse }) {
-      localStorage.removeItem('currentUser');
-      currentUserVar(null);
-    },
-  });
-  return (
-    <ProfileMenu
-      user={currentUser}
-      logout={logout}
-      loading={loading}
-      error={error}
-    />
-  );
+
+  const logout = () => {
+    localStorage.removeItem('loggedInUser');
+    loggedInUserVar(null);
+  };
+
+  const username =
+    loggedInUser && loggedInUser.user ? loggedInUser.user.username : null;
+  return <ProfileMenu username={username} logout={logout} />;
 };
 
 const useStyles = makeStyles((theme) => ({
@@ -98,9 +85,7 @@ const StyledMenu = withStyles({
 ));
 
 const ProfileMenu = ({
-  user,
-  loading,
-  error,
+  username,
   logout,
 }: ProfileMenuProps): React.ReactElement => {
   const classes = useStyles();
@@ -121,9 +106,7 @@ const ProfileMenu = ({
   return (
     <>
       <div className={classes.userDisplay}>
-        <Typography className={classes.typographyStyles}>
-          {user ? user.username : ''}
-        </Typography>
+        <Typography className={classes.typographyStyles}>{username}</Typography>
         <Avatar className={classes.avatar} onClick={handleClick}>
           <AccountCircleIcon />
         </Avatar>

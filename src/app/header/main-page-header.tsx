@@ -11,17 +11,18 @@ import { gql, useQuery } from '@apollo/client';
 import ProfileMenu from './profile-menu';
 import { User } from '../models/models';
 
-const CURRENT_USER = gql`
-  query getCurrentUser {
-    currentUser @client
+const LOGGED_IN_USER = gql`
+  query getLoggedInUser {
+    loggedInUser @client
   }
 `;
 
 const MainSiteHeaderWithData = (): React.ReactElement => {
   const {
-    data: { currentUser },
-  } = useQuery(CURRENT_USER);
-  return <MainSiteHeader currentUser={currentUser} />;
+    data: { loggedInUser },
+  } = useQuery(LOGGED_IN_USER);
+  const user = loggedInUser ? loggedInUser.user : null;
+  return <MainSiteHeader loggedInUser={user} />;
 };
 
 const useStyles = makeStyles((theme) => ({
@@ -50,11 +51,11 @@ const LoginButton = withStyles({
 })(Button);
 
 interface MainSiteHeaderProps {
-  currentUser: User;
+  loggedInUser: User;
 }
 
 const MainSiteHeader = ({
-  currentUser,
+  loggedInUser,
 }: MainSiteHeaderProps): React.ReactElement => {
   const classes = useStyles();
 
@@ -65,7 +66,7 @@ const MainSiteHeader = ({
           Gabe Test App
         </Typography>
         <div>
-          {currentUser ? (
+          {loggedInUser ? (
             <ProfileMenu />
           ) : (
             <div className={classes.buttonContainer}>

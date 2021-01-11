@@ -1,10 +1,11 @@
 import * as React from 'react';
 import {
   ApolloClient,
-  InMemoryCache,
+  createHttpLink,
   ApolloProvider,
   gql,
 } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
 import { ThemeProvider } from '@material-ui/core/styles';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import styled from 'styled-components';
@@ -14,16 +15,34 @@ import HomePage from './home-page/home.page';
 import LoginPage from './profile/login.page';
 import SignupPage from './profile/signup.page';
 import theme from './theme/theme';
+import { AuthPayload } from './models/models';
+import AuthGuard from './shared/authGuard';
+import MyTablesPage from './tables/my-tables.page';
 
 export const typeDefs = gql`
   extend type Query {
-    currentUser: User
+    loggedInUser: AuthPayload
   }
 `;
 
+const httpLink = createHttpLink({
+  uri: 'http://localhost:3000/graphql',
+});
+
+const authLink = setContext((_, { headers }: any) => {
+  const { token } = (JSON.parse(localStorage.getItem('loggedInUser')) ||
+    {}) as AuthPayload;
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : '',
+    },
+  };
+});
+
 const client = new ApolloClient({
   cache,
-  uri: 'http://localhost:3000/graphql',
+  link: authLink.concat(httpLink),
   typeDefs,
 });
 
@@ -43,6 +62,11 @@ const App = (): React.ReactElement => (
             </Route>
             <Route path="/signup">
               <SignupPage />
+            </Route>
+            <Route path="/mytables">
+              <AuthGuard>
+                <MyTablesPage />
+              </AuthGuard>
             </Route>
             <Route path="/" exact>
               <HomePage />

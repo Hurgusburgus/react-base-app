@@ -13,17 +13,18 @@ import {
 } from '@material-ui/core';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import ErrorOutlineIcon from '@material-ui/icons/ErrorOutline';
-import { currentUserVar } from '../cache';
+import { loggedInUserVar } from '../cache';
 import { User } from '../models/models';
 
-const CURRENT_USER = gql`
-  query getCurrentUser {
-    currentUser @client
+const LOGGED_IN_USER = gql`
+  query getLoggedInUser {
+    loggedInUser @client
   }
 `;
 export const SIGNUP = gql`
   mutation signup($email: String!, $username: String!, $password: String!) {
     signup(email: $email, username: $username, password: $password) {
+      token
       user {
         id
         username
@@ -37,24 +38,22 @@ const SignUpPageWithData = (): React.ReactElement => {
   const history = useHistory();
 
   const {
-    data: { currentUser },
-  } = useQuery(CURRENT_USER);
+    data: { loggedInUser },
+  } = useQuery(LOGGED_IN_USER);
 
   const [signup, { loading, error }] = useMutation(SIGNUP, {
     onCompleted({ signup: signupResponse }) {
       if (signupResponse && signupResponse.user) {
-        localStorage.setItem(
-          'currentUser',
-          JSON.stringify(signupResponse.user)
-        );
-        currentUserVar(signupResponse.user);
+        localStorage.setItem('loggedInUser', JSON.stringify(signupResponse));
+        loggedInUserVar(signupResponse);
         history.push('/');
       }
     },
   });
+  const user = loggedInUser ? loggedInUser.user : null;
   return (
     <SignUpPage
-      currentUser={currentUser}
+      currentUser={user}
       signup={signup}
       loading={loading}
       error={error}

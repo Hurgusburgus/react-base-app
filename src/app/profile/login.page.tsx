@@ -16,18 +16,19 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import ErrorOutlineIcon from '@material-ui/icons/ErrorOutline';
 import { gql, useQuery, useMutation } from '@apollo/client';
 
-import { currentUserVar } from '../cache';
+import { loggedInUserVar } from '../cache';
 import { User } from '../models/models';
 
-const CURRENT_USER = gql`
-  query getCurrentUser {
-    currentUser @client
+const LOGGED_IN_USER = gql`
+  query getLoggedInUser {
+    loggedInUser @client
   }
 `;
 
 export const LOGIN = gql`
   mutation login($username: String!, $password: String!) {
     login(username: $username, password: $password) {
+      token
       user {
         id
         username
@@ -41,21 +42,22 @@ const LoginPageWithData = (): React.ReactElement => {
   const history = useHistory();
 
   const {
-    data: { currentUser },
-  } = useQuery(CURRENT_USER);
+    data: { loggedInUser },
+  } = useQuery(LOGGED_IN_USER);
 
   const [login, { loading, error }] = useMutation(LOGIN, {
     onCompleted({ login: loginResponse }) {
       if (loginResponse && loginResponse.user) {
-        localStorage.setItem('currentUser', JSON.stringify(loginResponse.user));
-        currentUserVar(loginResponse.user);
+        localStorage.setItem('loggedInUser', JSON.stringify(loginResponse));
+        loggedInUserVar(loginResponse);
         history.push('/');
       }
     },
   });
+  const user = loggedInUser ? loggedInUser.user : null;
   return (
     <LoginPage
-      currentUser={currentUser}
+      currentUser={user}
       login={login}
       loading={loading}
       error={error}
