@@ -11,8 +11,8 @@ export interface User {
 
 export interface Table {
   id: string;
-  createdBy: string;
+  createdBy: User;
   createdOn: string;
   invitees: string[];
-  participants: string[];
+  participants: User[];
 }

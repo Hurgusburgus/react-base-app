@@ -12,30 +12,90 @@ import {
   Paper,
   Button,
 } from '@material-ui/core';
-import { gql, useQuery, useMutation } from '@apollo/client';
+import { gql, useQuery, useMutation, ApolloError } from '@apollo/client';
 
 import { Table } from '../models/models';
+import { TABLE_FRAGMENT } from '../models/fragments';
 
-export const MY_TABLES = gql`
+export const GET_TABLES = gql`
   query getTables {
-    getTables {
-      id
-      createdBy
-      createdOn
-      invitees
-      participants
+    tables {
+      ...TableFragment
     }
   }
+  ${TABLE_FRAGMENT}
 `;
 
-const headers = ['ID', 'Host', 'Created', 'Participants'];
+export const CREATE_TABLE = gql`
+  mutation createTable {
+    createTable {
+      ...TableFragment
+    }
+  }
+  ${TABLE_FRAGMENT}
+`;
+
+export const JOIN_TABLE = gql`
+  mutation joinTable($tableId: ID!) {
+    joinTable(tableId: $tableId) {
+      ...TableFragment
+    }
+  }
+  ${TABLE_FRAGMENT}
+`;
+
+const headers = ['ID', 'Host', 'Created', 'Participants', 'Actions'];
 
 const MyTablesPageWithData = (): React.ReactElement => {
-  const { data } = useQuery(MY_TABLES);
+  const { data: tablesData } = useQuery(GET_TABLES);
 
-  const tables = data ? data.getTables : [];
+  const [createTable] = useMutation(CREATE_TABLE, {
+    update(cache, { data: { createTable: createTableResult } }) {
+      cache.modify({
+        fields: {
+          tables(existingTables = []) {
+            const newTableRef = cache.writeFragment({
+              data: createTableResult,
+              fragment: TABLE_FRAGMENT,
+              fragmentName: 'TableFragment',
+            });
+            return [...existingTables, newTableRef];
+          },
+        },
+      });
+    },
+  });
 
-  return <MyTablesPage tables={tables} />;
+  const [joinTable] = useMutation(JOIN_TABLE, {
+    update(cache, { data: { joinTable: joinTableResult } }) {
+      cache.modify({
+        fields: {
+          tables(existingTables = []) {
+            const joinTableRef = cache.writeFragment({
+              data: joinTableResult,
+              fragment: TABLE_FRAGMENT,
+              fragmentName: 'TableFragment',
+            });
+            return existingTables.map((table: Table) =>
+              table.id === joinTableResult.id ? joinTableRef : table
+            );
+          },
+        },
+      });
+    },
+  });
+
+  const tables = tablesData ? tablesData.tables : [];
+
+  return (
+    <MyTablesPage
+      tables={tables}
+      createTable={createTable}
+      joinTable={(tableId: string) => {
+        joinTable({ variables: { tableId } });
+      }}
+    />
+  );
 };
 
 const useStyles = makeStyles((theme) => ({
@@ -48,21 +108,38 @@ const useStyles = makeStyles((theme) => ({
   table: {
     minwidth: 650,
   },
+  createButton: {
+    margin: theme.spacing(3, 0, 2),
+  },
 }));
 
 interface MyTablesPageProps {
   tables: Table[];
+  createTable: () => void;
+  joinTable: (tableId: string) => void;
 }
 
-const MyTablesPage = ({ tables }: MyTablesPageProps): React.ReactElement => {
+const MyTablesPage = ({
+  tables,
+  createTable,
+  joinTable,
+}: MyTablesPageProps): React.ReactElement => {
   const classes = useStyles();
-
   return (
     <Container maxWidth="md">
       <div className={classes.paper}>
         <Typography component="h1" variant="h5">
           My Tables
         </Typography>
+        <Button
+          type="button"
+          variant="contained"
+          color="primary"
+          className={classes.createButton}
+          onClick={createTable}
+        >
+          Create&nbsp;Game
+        </Button>
         <TableContainer component={Paper}>
           <MuiTable className={classes.table}>
             <TableHead>
@@ -77,13 +154,26 @@ const MyTablesPage = ({ tables }: MyTablesPageProps): React.ReactElement => {
                 <TableRow key={table.id}>
                   <TableCell key={`${table.id}id`}>{table.id}</TableCell>
                   <TableCell key={`${table.id}createdBy`}>
-                    {table.createdBy}
+                    {table.createdBy ? table.createdBy.username : table}
                   </TableCell>
                   <TableCell key={`${table.id}createdOn`}>
-                    {table.createdOn}
+                    {new Date(parseInt(table.createdOn, 10)).toLocaleString()}
                   </TableCell>
                   <TableCell key={`${table.id}participants`}>
-                    {table.participants.join(', ')}
+                    {table.participants.map((p) => p.username).join(', ')}
+                  </TableCell>
+                  <TableCell key={`${table.id}actions`}>
+                    <Button
+                      type="button"
+                      variant="contained"
+                      color="primary"
+                      className={classes.createButton}
+                      onClick={() => {
+                        joinTable(table.id);
+                      }}
+                    >
+                      Join&nbsp;Game
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
