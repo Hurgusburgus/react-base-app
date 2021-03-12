@@ -35,6 +35,18 @@ module.exports = {
   devtool: 'source-map',
   devServer: {
     historyApiFallback: true,
+    proxy: {
+      '/graphql': {
+        target: {
+          port: 3000
+        }
+      },
+      '/csrf-token': {
+        target: {
+          port: 3000
+        }
+      }
+    }
   },
   plugins: [
     new HtmlWebpackPlugin({

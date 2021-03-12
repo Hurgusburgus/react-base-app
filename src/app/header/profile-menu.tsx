@@ -39,8 +39,7 @@ const ProfileMenuWithData = (): React.ReactElement => {
     loggedInUserVar(null);
   };
 
-  const username =
-    loggedInUser && loggedInUser.user ? loggedInUser.user.username : null;
+  const username = loggedInUser ? loggedInUser.username : null;
   return <ProfileMenu username={username} logout={logout} />;
 };
 

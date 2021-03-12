@@ -1,71 +1,38 @@
 import * as React from 'react';
+import { useParams } from 'react-router-dom';
 import { makeStyles, Container, Typography, Grid } from '@material-ui/core';
 import { gql, useQuery, useMutation, ApolloError } from '@apollo/client';
 import TableCard from './table-card';
 import { Table } from '../models/models';
 import { TABLE_FRAGMENT } from '../models/fragments';
 
-export const GET_MY_TABLES = gql`
-  query getMyTables {
-    myTables {
+export const GET_TABLE = gql`
+  query getTable($id: ID!) {
+    table(id: $id) {
       ...TableFragment
     }
   }
   ${TABLE_FRAGMENT}
 `;
 
-export const GET_MY_INVITES = gql`
-  query getMyTableInvites {
-    myTableInvites {
+export const JOIN_TABLE = gql`
+  mutation joinTable {
+    joinTable {
       ...TableFragment
     }
   }
   ${TABLE_FRAGMENT}
 `;
 
-export const CREATE_TABLE = gql`
-  mutation createTable {
-    createTable {
-      ...TableFragment
-    }
-  }
-  ${TABLE_FRAGMENT}
-`;
-
-const MyTablesPageWithData = (): React.ReactElement => {
-  const { data: myTablesData } = useQuery(GET_MY_TABLES);
-  const { data: myInvitesData } = useQuery(GET_MY_INVITES);
-
-  const [createTable] = useMutation(CREATE_TABLE, {
-    update(cache, { data: { createTable: createTableResult } }) {
-      cache.modify({
-        fields: {
-          tables(existingTables = []) {
-            const newTableRef = cache.writeFragment({
-              data: createTableResult,
-              fragment: TABLE_FRAGMENT,
-              fragmentName: 'TableFragment',
-            });
-            return [...existingTables, newTableRef];
-          },
-        },
-      });
-    },
+const TableDetailsPageWithData = (): React.ReactElement => {
+  const { tableId } = useParams<{ [key: string]: string }>();
+  const { data: tableData } = useQuery(GET_TABLE, {
+    variables: { id: tableId },
   });
 
-  const myTables: Table[] = myTablesData ? myTablesData.myTables : [];
-  const myInvites: Table[] = myInvitesData
-    ? myInvitesData.myTableInvites.filter(
-        (invite: Table) => !myTables.find((table) => table.id === invite.id)
-      )
-    : [];
-  return (
-    <MyTablesPage
-      myTables={myTables}
-      myTableInvites={myInvites}
-      createTable={createTable}
-    />
-  );
+  const table: Table = tableData ? tableData.table : null;
+
+  return <TableDetailsPage table={table} />;
 };
 
 const useStyles = makeStyles((theme) => ({
@@ -83,17 +50,13 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-interface MyTablesPageProps {
-  myTables: Table[];
-  myTableInvites: Table[];
-  createTable: () => void;
+interface TableDetailsPageProps {
+  table: Table;
 }
 
-const MyTablesPage = ({
-  myTables,
-  myTableInvites,
-  createTable,
-}: MyTablesPageProps): React.ReactElement => {
+const TableDetailsPage = ({
+  table,
+}: TableDetailsPageProps): React.ReactElement => {
   const classes = useStyles();
   return (
     <>
@@ -129,4 +92,4 @@ const MyTablesPage = ({
   );
 };
 
-export default MyTablesPageWithData;
+export default TableDetailsPageWithData;

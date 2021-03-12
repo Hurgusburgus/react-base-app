@@ -21,8 +21,7 @@ const MainSiteHeaderWithData = (): React.ReactElement => {
   const {
     data: { loggedInUser },
   } = useQuery(LOGGED_IN_USER);
-  const user = loggedInUser ? loggedInUser.user : null;
-  return <MainSiteHeader loggedInUser={user} />;
+  return <MainSiteHeader loggedInUser={loggedInUser} />;
 };
 
 const useStyles = makeStyles((theme) => ({

@@ -28,12 +28,9 @@ const LOGGED_IN_USER = gql`
 export const LOGIN = gql`
   mutation login($username: String!, $password: String!) {
     login(username: $username, password: $password) {
-      token
-      user {
-        id
-        username
-        email
-      }
+      id
+      username
+      email
     }
   }
 `;
@@ -47,7 +44,7 @@ const LoginPageWithData = (): React.ReactElement => {
 
   const [login, { loading, error }] = useMutation(LOGIN, {
     onCompleted({ login: loginResponse }) {
-      if (loginResponse && loginResponse.user) {
+      if (loginResponse) {
         localStorage.setItem('loggedInUser', JSON.stringify(loginResponse));
         loggedInUserVar(loginResponse);
         history.push('/');

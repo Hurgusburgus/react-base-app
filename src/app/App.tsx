@@ -4,20 +4,25 @@ import {
   createHttpLink,
   ApolloProvider,
   gql,
+  split,
 } from '@apollo/client';
+import axios from 'axios';
+import { onError } from '@apollo/client/link/error';
 import { setContext } from '@apollo/client/link/context';
+import { WebSocketLink } from '@apollo/client/link/ws';
 import { ThemeProvider } from '@material-ui/core/styles';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import styled from 'styled-components';
-import { cache } from './cache';
+import { getMainDefinition } from '@apollo/client/utilities';
+import { cache, loggedInUserVar } from './cache';
 import Header from './header/main-page-header';
 import HomePage from './home-page/home.page';
 import LoginPage from './profile/login.page';
 import SignupPage from './profile/signup.page';
 import theme from './theme/theme';
-import { AuthPayload } from './models/models';
 import AuthGuard from './shared/authGuard';
 import MyTablesPage from './tables/my-tables.page';
+import ChatWrapper from './chat/chat-wrapper';
 
 export const typeDefs = gql`
   extend type Query {
@@ -25,24 +30,60 @@ export const typeDefs = gql`
   }
 `;
 
+let csrfToken: string;
+const getCsrfToken = async (): Promise<string> => {
+  if (csrfToken) {
+    return csrfToken;
+  }
+  const { data } = await axios.get('/csrf-token');
+  csrfToken = data ? data.csrfToken : null;
+  return csrfToken;
+};
+getCsrfToken();
+
 const httpLink = createHttpLink({
-  uri: 'http://localhost:3000/graphql',
+  uri: '/graphql',
+  credentials: 'include',
 });
 
-const authLink = setContext((_, { headers }: any) => {
-  const { token } = (JSON.parse(localStorage.getItem('loggedInUser')) ||
-    {}) as AuthPayload;
+const authLink = setContext(async (_, { headers }: any) => {
   return {
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : '',
+      'X-CSRF-Token': await getCsrfToken(),
     },
   };
 });
 
+const redirectLink = onError(({ graphQLErrors, networkError }: any) => {
+  if (networkError && networkError.message === 'UNAUTHORIZED') {
+    localStorage.removeItem('loggedInUser');
+    loggedInUserVar(null);
+  }
+});
+
+const wsLink = new WebSocketLink({
+  uri: `ws://localhost:3000/graphql`,
+  options: {
+    reconnect: true,
+  },
+});
+
+const splitLink = split(
+  ({ query }) => {
+    const definition = getMainDefinition(query);
+    return (
+      definition.kind === 'OperationDefinition' &&
+      definition.operation === 'subscription'
+    );
+  },
+  wsLink,
+  authLink.concat(httpLink).concat(redirectLink)
+);
+
 const client = new ApolloClient({
   cache,
-  link: authLink.concat(httpLink),
+  link: splitLink,
   typeDefs,
 });
 
@@ -65,7 +106,9 @@ const App = (): React.ReactElement => (
             </Route>
             <Route path="/mytables">
               <AuthGuard>
-                <MyTablesPage />
+                <ChatWrapper>
+                  <MyTablesPage />
+                </ChatWrapper>
               </AuthGuard>
             </Route>
             <Route path="/" exact>

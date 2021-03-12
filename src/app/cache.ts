@@ -1,7 +1,7 @@
 import { InMemoryCache, Reference, makeVar } from '@apollo/client';
-import { AuthPayload } from './models/models';
+import { User } from './models/models';
 
-export const loggedInUserVar = makeVar<AuthPayload>(
+export const loggedInUserVar = makeVar<User>(
   JSON.parse(localStorage.getItem('loggedInUser'))
 );
 
