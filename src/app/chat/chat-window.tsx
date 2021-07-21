@@ -12,7 +12,7 @@ import {
 } from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
 import { gql, useQuery, useMutation } from '@apollo/client';
-import { useParams } from 'react-router-dom';
+import UserContext from '../shared/userContext';
 import { User, Chat } from '../models/models';
 import { CHAT_FRAGMENT, COMMENT_FRAGMENT } from '../models/fragments';
 import ChatEntry from './chat-entry';
@@ -45,18 +45,16 @@ const POST_COMMENT = gql`
   ${COMMENT_FRAGMENT}
 `;
 
-const LOGGED_IN_USER = gql`
-  query getLoggedInUser {
-    loggedInUser @client
-  }
-`;
+// const LOGGED_IN_USER = gql`
+//   query getLoggedInUser {
+//     loggedInUser @client
+//   }
+// `;
 
 const ChatWindowWithData = (): React.ReactElement => {
   // const { chatId } = React.useContext(ChatContext);
   const chatId = '1';
-  const {
-    data: { loggedInUser },
-  } = useQuery(LOGGED_IN_USER);
+  const loggedInUser = React.useContext(UserContext);
 
   const { subscribeToMore, data: chatData } = useQuery(GET_CHAT, {
     variables: { id: chatId },
@@ -81,11 +79,10 @@ const ChatWindowWithData = (): React.ReactElement => {
     });
   };
 
-  const user = loggedInUser ? loggedInUser.user : null;
   const chat = chatData ? chatData.chat : null;
   return (
     <ChatWindow
-      loggedInUser={user}
+      loggedInUser={loggedInUser}
       chatId={chatId}
       chat={chat}
       subscribeToComments={subscribeToComments}

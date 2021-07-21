@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useHistory, Link as RouterLink } from 'react-router-dom';
 import { gql, useQuery, useMutation } from '@apollo/client';
+import UserContext from './userContext';
 
 const LOGGED_IN_USER = gql`
   query getLoggedInUser {
@@ -22,7 +23,9 @@ const AuthGuard = ({ children }: AuthGuardProps): React.ReactElement => {
   if (!loggedInUser) {
     history.push('/');
   }
-  return children;
+  return (
+    <UserContext.Provider value={loggedInUser}>{children}</UserContext.Provider>
+  );
 };
 
 export default AuthGuard;

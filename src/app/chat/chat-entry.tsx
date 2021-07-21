@@ -24,7 +24,6 @@ const useStyles = makeStyles((theme) => ({
     maxWidth: '60%',
   },
   commentContent: {
-    backgroundColor: theme.palette.primary.main,
     borderRadius: theme.spacing(1),
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
@@ -32,9 +31,11 @@ const useStyles = makeStyles((theme) => ({
   },
   myComment: {
     borderRadius: theme.spacing(1, 1, 1, 0),
+    backgroundColor: theme.palette.primary.main,
   },
   theirComment: {
     borderRadius: theme.spacing(1, 1, 0, 1),
+    backgroundColor: theme.palette.secondary.main,
   },
 }));
 
@@ -51,15 +52,15 @@ const ChatEntry = ({
   if (!comment) {
     return null;
   }
-  const myComment = comment.author.id === '1';
+  const myComment = comment.author.id === loggedInUser.id;
+
   return (
     <Grid
-      component={Box}
       item
       key={comment.id}
       container
       direction="column"
-      alignSelf={myComment ? 'flex-end' : 'flex-start'}
+      alignItems={myComment ? 'flex-start' : 'flex-end'}
     >
       <Grid item component="div">
         {comment.author.username}
@@ -68,7 +69,7 @@ const ChatEntry = ({
         component="div"
         item
         container
-        direction="row"
+        direction={myComment ? 'row' : 'row-reverse'}
         alignItems="center"
         spacing={2}
       >
